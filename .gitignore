@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+
+data/
+models/
+webui/
+
+*.bak
+*.backup*
+*.log
+.DS_Store

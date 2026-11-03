@@ -1,0 +1,75 @@
+services:
+
+  owl-ai-engine:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    container_name: owl-ai-engine
+    restart: unless-stopped
+
+    volumes:
+      - ./data/models:/models:ro
+
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --models-dir
+      - /models
+      - --models-max
+      - "1"
+      - --ctx-size
+      - "8192"
+      - --parallel
+      - "1"
+      - --threads
+      - "4"
+      - --threads-batch
+      - "4"
+      - --image-min-tokens
+      - "1024"
+      - --api-key
+      - "${LLAMA_API_KEY}"
+      - --no-webui
+
+    cpus: "3.50"
+    mem_limit: 9g
+    memswap_limit: 9g
+
+    networks:
+      - owl-net
+
+
+  owl-ai-webui:
+    image: ghcr.io/open-webui/open-webui:v0.11.0
+    container_name: owl-ai-webui
+    restart: unless-stopped
+
+    depends_on:
+      - owl-ai-engine
+
+    ports:
+      - "3001:8080"
+
+    volumes:
+      - ./data/webui:/app/backend/data
+
+    environment:
+      ENABLE_OLLAMA_API: "False"
+      ENABLE_OPENAI_API: "True"
+      OPENAI_API_BASE_URLS: "http://owl-ai-engine:8080/v1"
+      OPENAI_API_KEYS: "${LLAMA_API_KEY}"
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY}"
+      AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST: "60"
+
+    cpus: "0.50"
+    mem_limit: 1536m
+    memswap_limit: 1536m
+
+    networks:
+      - owl-net
+
+
+networks:
+  owl-net:
+    name: owl-ai-network
+    driver: bridge
